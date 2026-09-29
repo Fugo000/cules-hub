@@ -22,7 +22,7 @@ class _FinanceScreenState extends State<FinanceScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
-        title: const Text('Финансы & Контракты Барселоны'),
+        title: const Text('Финансы, Зарплаты & FFP 26/27'),
         backgroundColor: const Color(0xFF004D98),
         centerTitle: true,
       ),
@@ -30,161 +30,139 @@ class _FinanceScreenState extends State<FinanceScreen> {
         future: _financeFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(color: Colors.amber),
-            );
+            return const Center(child: CircularProgressIndicator(color: Colors.amber));
           }
 
-          if (snapshot.hasError) {
-            return Center(
-              child: Text(
-                'Ошибка загрузки: ${snapshot.error}',
-                style: const TextStyle(color: Colors.redAccent),
-              ),
+          if (snapshot.hasError || !snapshot.hasData) {
+            return const Center(
+              child: Text('Ошибка загрузки финансовых данных', style: TextStyle(color: Colors.redAccent)),
             );
           }
 
           final data = snapshot.data ?? {};
-          final metrics = data['financialMetrics'] ?? {};
-          final players = data['squadFinancials'] as List<dynamic>? ?? [];
+          final metrics = data['financialSummary'] ?? data['financialMetrics'] ?? {};
+          final squadFinancials = data['playerContracts'] ?? data['squadFinancials'] ?? [];
 
           return ListView(
             padding: const EdgeInsets.all(12),
             children: [
+              // Сводная финансовая карточка клуба
               Card(
                 color: const Color(0xFF1E1E1E),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
+                  side: const BorderSide(color: Color(0xFFA50044), width: 1.5),
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Годовой фонд зарплат: ${metrics['totalYearlyWageBill'] ?? '—'}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      const Row(
+                        children: [
+                          Icon(Icons.account_balance, color: Colors.amber, size: 24),
+                          SizedBox(width: 8),
+                          Text(
+                            'Финансовый отчет FC Barcelona 26/27',
+                            style: TextStyle(color: Colors.amber, fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 6),
-                      Text(
-                        'Общая стоимость состава: ${metrics['squadValuationTotal'] ?? '—'}',
-                        style: const TextStyle(
-                          color: Colors.amber,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Лимит зарплат Ла Лиги: ${metrics['laLigaCapLimit'] ?? '—'} (${metrics['ruleStatus'] ?? '—'})',
-                        style: const TextStyle(
-                          color: Colors.greenAccent,
-                          fontSize: 13,
-                        ),
-                      ),
+                      const Divider(color: Colors.white24, height: 24),
+                      _buildMetricRow('Годовой фонд зарплат (Gross)', metrics['totalYearlyWageBillGross'] ?? metrics['totalYearlyWageBill'] ?? '—', Colors.white),
+                      _buildMetricRow('Общая стоимость состава', metrics['squadMarketValuation'] ?? metrics['squadValuationTotal'] ?? '—', Colors.greenAccent),
+                      _buildMetricRow('Лимит зарплат Ла Лиги', metrics['laLigaSalaryCapLimit'] ?? metrics['laLigaCapLimit'] ?? '—', Colors.amber),
+                      _buildMetricRow('Статус правил FFP', metrics['ffpRuleStatus'] ?? metrics['ruleStatus'] ?? '1:1 Rule Active', Colors.lightBlueAccent),
                     ],
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
-              Text(
-                'Полный финансовый профиль игроков (${players.length})',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
 
-              if (players.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.all(16.0),
-                  child: Center(
-                    child: Text(
-                      'Данные по контрактам пока отсутствуют',
-                      style: TextStyle(color: Colors.grey),
-                    ),
+              const SizedBox(height: 16),
+              const Text(
+                '💰 Детализация зарплат и стоимости игроков',
+                style: TextStyle(color: Colors.amber, fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 10),
+
+              // Список контрактов игроков
+              ...squadFinancials.map<Widget>((player) {
+                return Card(
+                  color: const Color(0xFF222431),
+                  margin: const EdgeInsets.only(bottom: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    side: const BorderSide(color: Colors.white12),
                   ),
-                )
-              else
-                ...players.map((p) => Card(
-                      color: const Color(0xFF252525),
-                      margin: const EdgeInsets.only(bottom: 8),
-                      child: ExpansionTile(
-                        leading: CircleAvatar(
-                          backgroundColor: const Color(0xFFA50044),
-                          child: Text(
-                            '#${p['id'] ?? ''}',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
+                  child: Padding(
+                    padding: const EdgeInsets.all(14.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              player['name'] ?? '',
+                              style: const TextStyle(color: Colors.white, fontSize: 17, fontWeight: FontWeight.bold),
                             ),
-                          ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.green.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.green),
+                              ),
+                              child: Text(
+                                'Ценник: ${player['marketVal'] ?? player['marketValue'] ?? '—'}',
+                                style: const TextStyle(color: Colors.greenAccent, fontWeight: FontWeight.bold, fontSize: 12),
+                              ),
+                            ),
+                          ],
                         ),
-                        title: Text(
-                          '${p['name'] ?? ''} (${p['pos'] ?? ''})',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        subtitle: Text(
-                          'Зарплата: ${p['grossYearly'] ?? '—'}/год • Рын. цена: ${p['marketVal'] ?? '—'}',
-                          style: const TextStyle(
-                            color: Colors.grey,
-                            fontSize: 12,
-                          ),
-                        ),
-                        trailing: Text(
-                          '${p['grossWeekly'] ?? '—'}/нед',
-                          style: const TextStyle(
-                            color: Colors.amber,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          ),
-                        ),
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.all(12.0),
-                            child: Column(
+                        const Divider(color: Colors.white12, height: 20),
+                        
+                        // Параметры зарплат и контракта
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                _buildRow(
-                                  'Возраст и нога:',
-                                  '${p['age'] ?? '—'} лет • ${p['foot'] ?? '—'} нога (${p['height'] ?? '—'})',
-                                ),
-                                _buildRow(
-                                  'Сумма выкупа (Клаусула):',
-                                  p['clause'] ?? 'N/A',
-                                ),
-                                _buildRow(
-                                  'Контракт до:',
-                                  p['contractEnd'] ?? 'N/A',
-                                ),
-                                _buildRow(
-                                  'Амортизация FFP:',
-                                  p['ffpAmort'] ?? 'N/A',
-                                ),
-                                _buildRow(
-                                  'Игровая статистика:',
-                                  p['stats'] ?? 'N/A',
-                                ),
-                                _buildRow(
-                                  'Ключевые качества:',
-                                  p['traits'] ?? 'N/A',
-                                ),
+                                const Text('Зарплата в год (Gross):', style: TextStyle(color: Colors.grey, fontSize: 11)),
+                                Text(player['grossYearly'] ?? '—', style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 14)),
                               ],
                             ),
-                          )
-                        ],
-                      ),
-                    )),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                const Text('Зарплата в неделю:', style: TextStyle(color: Colors.grey, fontSize: 11)),
+                                Text(player['grossWeekly'] ?? '—', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+                              ],
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text('Клаусула (Выкуп): ${player['clause'] ?? '—'}', style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                            Text('Контракт до: ${player['contractEnd'] ?? '—'}', style: const TextStyle(color: Colors.amber, fontSize: 12)),
+                          ],
+                        ),
+                        if (player['ffpAmortization'] != null || player['ffpAmort'] != null) ...[
+                          const SizedBox(height: 6),
+                          Text(
+                            'Амортизация FFP: ${player['ffpAmortization'] ?? player['ffpAmort']}',
+                            style: const TextStyle(color: Colors.purpleAccent, fontSize: 11, fontStyle: FontStyle.italic),
+                          ),
+                        ]
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
             ],
           );
         },
@@ -192,21 +170,14 @@ class _FinanceScreenState extends State<FinanceScreen> {
     );
   }
 
-  Widget _buildRow(String label, String value) {
+  Widget _buildMetricRow(String title, String value, Color valueColor) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2.0),
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(color: Colors.grey, fontSize: 12)),
-          Text(
-            value,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
+          Text(title, style: const TextStyle(color: Colors.white70, fontSize: 13)),
+          Text(value, style: TextStyle(color: valueColor, fontWeight: FontWeight.bold, fontSize: 13)),
         ],
       ),
     );
