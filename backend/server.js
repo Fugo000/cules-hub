@@ -1,69 +1,136 @@
 const express = require('express');
 const cors = require('cors');
+const axios = require('axios');
 
 const app = express();
 
-// Разрешаем CORS для запросов с GitHub Pages и локального окружения
 app.use(cors());
 app.use(express.json());
 
-// 1. Эндпоинт Матч-Центра
-app.get('/api/match/latest', (req, res) => {
-    res.json({
-        latestMatch: {
-            round: "Ла Лига • Тур 7",
-            stadium: "Рамон Санчес Писхуан",
-            homeTeam: { name: "Севилья", score: 1 },
-            awayTeam: { name: "Барселона", score: 3 },
-            sofascoreRatings: [
-                { name: "Рафинья", pos: "ПВ", rating: 9.6, isMotm: true },
-                { name: "Ламин Ямаль", pos: "ПВ", rating: 8.8 },
-                { name: "Педри", pos: "ЦП", rating: 8.2 }
-            ]
-        },
-        upcomingMatches: [
-            { round: "Ла Лига • Тур 8", opponent: "Хетафе", venue: "Камп Ноу", date: "10.10.2026, 19:30" },
-            { round: "ЛЧ • Тур 2", opponent: "Галатасарай", venue: "RAMS Park", date: "13.10.2026, 22:00" }
-        ]
-    });
+// Ваш API токен от football-data.org
+const FOOTBALL_API_KEY = process.env.FOOTBALL_API_KEY || '136b36f3434747f3901037536999125d'; 
+const BARCA_TEAM_ID = 81; 
+
+// Тестовый ендпоинт
+app.get('/api', (req, res) => {
+  res.json({ message: 'Culés Hub API is running!' });
 });
 
-// 2. Эндпоинт La Masia & Barça Atlètic
+// Ендпоинт для матчей
+app.get('/api/matches', async (req, res) => {
+  try {
+    const response = await axios.get(
+      `https://api.football-data.org/v4/teams/${BARCA_TEAM_ID}/matches?limit=10`,
+      {
+        headers: { 'X-Auth-Token': FOOTBALL_API_KEY }
+      }
+    );
+    res.json(response.data.matches);
+  } catch (error) {
+    console.error('Error fetching matches:', error.response?.data || error.message);
+    res.status(500).json({ 
+      error: 'Не удалось загрузить данные матчей',
+      details: error.response?.data?.message || error.message 
+    });
+  }
+});
+
+// Ендпоинт для турнирной таблицы Ла Лиги
+app.get('/api/standings', async (req, res) => {
+  try {
+    const response = await axios.get(
+      'https://api.football-data.org/v4/competitions/PD/standings',
+      {
+        headers: { 'X-Auth-Token': FOOTBALL_API_KEY }
+      }
+    );
+    res.json(response.data.standings[0].table);
+  } catch (error) {
+    console.error('Error fetching standings:', error.response?.data || error.message);
+    res.status(500).json({ error: 'Не удалось загрузить турнирную таблицу' });
+  }
+});
+
+// Ендпоинт для состава Barça Atlètic и La Masia
 app.get('/api/masia', (req, res) => {
-    res.json({
-        teamInfo: {
-            name: "Barça Atlètic",
-            league: "Primera Federación - Group 1",
-            stadium: "Estadi Johan Cruyff"
-        },
-        players: [
-            { number: 1, name: "Eder Aller", pos: "ВР", age: 19, marketValue: "€1.2M", potential: 87, stats: "6 сухих матчей" },
-            { number: 2, name: "Landry Farré", pos: "ПЗ", age: 19, marketValue: "€1.8M", potential: 88, stats: "14 отборов" },
-            { number: 10, name: "Ebrima Tunkara", pos: "ЦАП", age: 17, marketValue: "€3.0M", potential: 93, stats: "4 гола, 2 ассиста" },
-            { number: 11, name: "Shane Kluivert", pos: "ЛВ", age: 19, marketValue: "€2.8M", potential: 91, stats: "5 голов" }
-        ]
-    });
+  res.json({
+    teamInfo: {
+      name: 'Barça Atlètic',
+      league: 'Primera Federación',
+      stadium: 'Estadi Johan Cruyff'
+    },
+    players: [
+      { name: 'Unai Hernández', number: '10', pos: 'CM', age: 19, stats: '5 голов, 3 ассиста', marketValue: '€1.5M', potential: '84' },
+      { name: 'Marc Bernal', number: '28', pos: 'CDM', age: 17, stats: 'Основной состав', marketValue: '€5.0M', potential: '89' },
+      { name: 'Cuenca', number: '4', pos: 'CB', age: 17, stats: '12 матчей', marketValue: '€800K', potential: '83' },
+      { name: 'Quim Junyent', number: '8', pos: 'CAM', age: 17, stats: '4 гола', marketValue: '€1.0M', potential: '86' }
+    ]
+  });
 });
 
-// 3. Эндпоинт Финансов и ФФП
-app.get('/api/transfers-and-finance', (req, res) => {
-    res.json({
-        financialMetrics: {
-            totalYearlyWageBill: "€263.8M",
-            squadValuationTotal: "€1,180.0M",
-            laLigaCapLimit: "€426.0M",
-            ruleStatus: "Правило 1:1 соблюдено"
-        },
-        squadFinancials: [
-            { id: 19, name: "Lamine Yamal", pos: "ПВ", grossYearly: "€16.70M", grossWeekly: "€321K", marketVal: "€180.0M", clause: "€1,000M", contractEnd: "2031", age: 19, foot: "Левая", height: "180 см", ffpAmort: "€0.0M", stats: "22 матча, 12 голов", traits: "Феноменальный дриблинг" },
-            { id: 8, name: "Pedri", pos: "ЦП", grossYearly: "€12.50M", grossWeekly: "€240K", marketVal: "€100.0M", clause: "€1,000M", contractEnd: "2030", age: 23, foot: "Правая", height: "174 см", ffpAmort: "€4.0M/год", stats: "20 матчей, 5 голов", traits: "Видение поля" }
-        ]
-    });
+// Ендпоинт для финансов, зарплат и лимитов FFP
+app.get('/api/finance', (req, res) => {
+  res.json({
+    financialMetrics: {
+      totalYearlyWageBill: '€208.5M',
+      squadValuationTotal: '€950.0M',
+      laLigaCapLimit: '€426.0M',
+      ruleStatus: 'Правило 1:1 восстановлено'
+    },
+    squadFinancials: [
+      {
+        id: '9',
+        name: 'Роберт Левандовски',
+        pos: 'ST',
+        grossYearly: '€33.3M',
+        grossWeekly: '€640K',
+        marketVal: '€15.0M',
+        age: 36,
+        foot: 'Правая',
+        height: '185 см',
+        clause: '€500M',
+        contractEnd: '2026',
+        ffpAmort: '€11.2M/год',
+        stats: '19 голов, 3 ассиста',
+        traits: 'Завершение, Выбор позиции'
+      },
+      {
+        id: '19',
+        name: 'Ламин Ямаль',
+        pos: 'RW',
+        grossYearly: '€1.67M',
+        grossWeekly: '€32K',
+        marketVal: '€150.0M',
+        age: 17,
+        foot: 'Левая',
+        height: '180 см',
+        clause: '€1.000M',
+        contractEnd: '2026 (Продление до 2031)',
+        ffpAmort: '€0M (Воспитанник)',
+        stats: '8 голов, 11 ассистов',
+        traits: 'Дриблинг, Видение поля'
+      },
+      {
+        id: '8',
+        name: 'Педри',
+        pos: 'CM',
+        grossYearly: '€9.38M',
+        grossWeekly: '€180K',
+        marketVal: '€80.0M',
+        age: 21,
+        foot: 'Правая',
+        height: '174 см',
+        clause: '€1.000M',
+        contractEnd: '2026',
+        ffpAmort: '€5.0M/год',
+        stats: '4 гола, 5 ассистов',
+        traits: 'Плеймейкинг, Контроль темпа'
+      }
+    ]
+  });
 });
 
-// Считываем порт от облачного хостинга (Render) или ставим 3000 по умолчанию
 const PORT = process.env.PORT || 3000;
-
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });

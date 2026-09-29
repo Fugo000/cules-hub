@@ -9,84 +9,211 @@ class BarcaMatchScreen extends StatefulWidget {
 }
 
 class _BarcaMatchScreenState extends State<BarcaMatchScreen> {
-  late Future<Map<String, dynamic>> _matchFuture;
+  late Future<List<dynamic>> _matchesFuture;
 
   @override
   void initState() {
     super.initState();
-    _matchFuture = ApiService.fetchNextMatch();
+    _matchesFuture = ApiService.fetchMatches();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF121212),
       appBar: AppBar(
         title: const Text('Матч-Центр Барселоны'),
         backgroundColor: const Color(0xFF004D98),
+        centerTitle: true,
       ),
-      body: FutureBuilder<Map<String, dynamic>>(
-        future: _matchFuture,
+      body: FutureBuilder<List<dynamic>>(
+        future: _matchesFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+              child: CircularProgressIndicator(color: Colors.amber),
+            );
           }
 
-          final data = snapshot.data ?? {};
-          final latest = data['latestMatch'] ?? {};
-          final ratings = latest['sofascoreRatings'] as List<dynamic>? ?? [];
-          final upcoming = data['upcomingMatches'] as List<dynamic>? ?? [];
+          if (snapshot.hasError) {
+            return Center(
+              child: Text(
+                'Ошибка загрузки: ${snapshot.error}',
+                style: const TextStyle(color: Colors.redAccent),
+              ),
+            );
+          }
+
+          final matches = snapshot.data ?? [];
+
+          if (matches.isEmpty) {
+            return const Center(
+              child: Text(
+                'Матчи не найдены',
+                style: TextStyle(color: Colors.white),
+              ),
+            );
+          }
+
+          // Находим последний завершенный матч для плашки сверху
+          final finishedMatches = matches
+              .where((m) => m['status'] == 'FINISHED')
+              .toList();
+          
+          final latestMatch = finishedMatches.isNotEmpty
+              ? finishedMatches.last
+              : matches.first;
+
+          final homeTeam = latestMatch['homeTeam']?['name'] ?? 'Хозяева';
+          final awayTeam = latestMatch['awayTeam']?['name'] ?? 'Гости';
+          final scoreHome = latestMatch['score']?['fullTime']?['home'] ?? 0;
+          final scoreAway = latestMatch['score']?['fullTime']?['away'] ?? 0;
+          final competition = latestMatch['competition']?['name'] ?? 'Турнир';
 
           return ListView(
             padding: const EdgeInsets.all(12),
             children: [
+              // Главная карточка последнего / текущего матча
               Card(
                 color: const Color(0xFF1E1E1E),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
                   child: Column(
                     children: [
-                      Text(latest['round'] ?? '', style: const TextStyle(color: Colors.grey, fontSize: 12)),
-                      const SizedBox(height: 10),
+                      Text(
+                        competition,
+                        style: const TextStyle(
+                          color: Colors.amber,
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          Text(latest['homeTeam']?['name'] ?? '', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-                          Text('${latest['homeTeam']?['score']} : ${latest['awayTeam']?['score']}', style: const TextStyle(color: Colors.amber, fontSize: 26, fontWeight: FontWeight.bold)),
-                          Text(latest['awayTeam']?['name'] ?? '', style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+                          Expanded(
+                            child: Text(
+                              homeTeam,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFA50044),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              '$scoreHome : $scoreAway',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: Text(
+                              awayTeam,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
                         ],
                       ),
-                      const SizedBox(height: 8),
-                      Text('Стадион: ${latest['stadium'] ?? ''}', style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Статус: ${latestMatch['status'] == 'FINISHED' ? 'Завершён' : 'Запланирован'}',
+                        style: const TextStyle(color: Colors.grey, fontSize: 12),
+                      ),
                     ],
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
-              const Text('Оценки игроков (SofaScore)', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              ...ratings.map((r) => Card(
-                color: const Color(0xFF252525),
-                child: ListTile(
-                  title: Text(r['name'], style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                  subtitle: Text('${r['pos']} • ${r['isMotm'] == true ? "Игрок матча (MOTM)" : "Удачная игра"}'),
-                  trailing: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(color: Colors.green.withOpacity(0.2), borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.green)),
-                    child: Text('${r['rating']}', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+
+              const SizedBox(height: 20),
+              const Text(
+                'Все расписание и результаты',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 10),
+
+              // Список всех остальных полученных матчей
+              ...matches.map((m) {
+                final hName = m['homeTeam']?['name'] ?? '—';
+                final aName = m['awayTeam']?['name'] ?? '—';
+                final status = m['status'];
+                final dateStr = m['utcDate'] != null
+                    ? m['utcDate'].toString().split('T')[0]
+                    : '';
+
+                String resultText = 'VS';
+                if (status == 'FINISHED') {
+                  final hScore = m['score']?['fullTime']?['home'] ?? 0;
+                  final aScore = m['score']?['fullTime']?['away'] ?? 0;
+                  resultText = '$hScore : $aScore';
+                }
+
+                return Card(
+                  color: const Color(0xFF252525),
+                  margin: const EdgeInsets.only(bottom: 8),
+                  child: ListTile(
+                    title: Text(
+                      '$hName — $aName',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    subtitle: Text(
+                      'Дата: $dateStr • ${m['competition']?['name'] ?? ''}',
+                      style: const TextStyle(color: Colors.grey, fontSize: 11),
+                    ),
+                    trailing: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: status == 'FINISHED'
+                            ? Colors.blueGrey.withOpacity(0.3)
+                            : Colors.green.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        resultText,
+                        style: TextStyle(
+                          color: status == 'FINISHED'
+                              ? Colors.white
+                              : Colors.greenAccent,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
                   ),
-                ),
-              )),
-              const SizedBox(height: 16),
-              const Text('Ближайшие матчи', style: TextStyle(color: Colors.amber, fontSize: 16, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              ...upcoming.map((m) => Card(
-                color: const Color(0xFF1E1E1E),
-                child: ListTile(
-                  title: Text('Барселона — ${m['opponent']}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                  subtitle: Text('${m['round']} • ${m['venue']}'),
-                  trailing: Text(m['date'], style: const TextStyle(color: Colors.greenAccent, fontSize: 11)),
-                ),
-              )),
+                );
+              }),
             ],
           );
         },
