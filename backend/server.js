@@ -11,6 +11,25 @@ app.use(express.json());
 const FOOTBALL_API_KEY = process.env.FOOTBALL_API_KEY || '136b36f3434747f3901037536999125d'; 
 const BARCA_TEAM_ID = 81; 
 
+// Главный роут для проверки работоспособности (убирает "Cannot GET /")
+app.get('/', (req, res) => {
+  res.send(`
+    <div style="font-family: sans-serif; padding: 20px; background: #121212; color: #fff; min-height: 100vh;">
+      <h1 style="color: #004D98;">🔵🔴 Culés Hub Backend API</h1>
+      <p style="color: #4AF6C3;">Сервер успешно запущен и готов к работе!</p>
+      <hr style="border-color: #333;" />
+      <h3>Доступные эндпоинты:</h3>
+      <ul>
+        <li><a style="color: #FFCC00;" href="/api">/api</a> — Статус сервера</li>
+        <li><a style="color: #FFCC00;" href="/api/matches">/api/matches</a> — Расписание и результаты матчей</li>
+        <li><a style="color: #FFCC00;" href="/api/standings">/api/standings</a> — Турнирная таблица Ла Лиги</li>
+        <li><a style="color: #FFCC00;" href="/api/masia">/api/masia</a> — Состав Barça Atlètic & La Masia</li>
+        <li><a style="color: #FFCC00;" href="/api/finance">/api/finance</a> — Финансы, зарплаты и лимиты FFP</li>
+      </ul>
+    </div>
+  `);
+});
+
 // Тестовый ендпоинт
 app.get('/api', (req, res) => {
   res.json({ message: 'Culés Hub API is running!' });
