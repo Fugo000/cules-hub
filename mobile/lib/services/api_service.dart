@@ -17,7 +17,7 @@ class ApiService {
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
-        throw Exception('Ошибка при получении матчей');
+        return [];
       }
     } catch (e) {
       print('Error fetching matches: $e');
@@ -25,7 +25,7 @@ class ApiService {
     }
   }
 
-  // 2. Новый метод: запрос деталей конкретного матча
+  // 2. Детали конкретного матча
   static Future<Map<String, dynamic>> fetchMatchDetails(String matchId) async {
     try {
       final response = await http.get(Uri.parse('$baseUrl/matches/$matchId'));
@@ -40,18 +40,18 @@ class ApiService {
     }
   }
 
-  // 3. Запрос турнирной таблицы
-  static Future<List<dynamic>> fetchStandings() async {
+  // 3. Официальный состав сезона 2026/2027
+  static Future<Map<String, dynamic>> fetchSquad2026() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/standings'));
+      final response = await http.get(Uri.parse('$baseUrl/squad'));
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
       } else {
-        throw Exception('Ошибка при получении таблицы');
+        return {};
       }
     } catch (e) {
-      print('Error fetching standings: $e');
-      return [];
+      print('Error fetching squad: $e');
+      return {};
     }
   }
 

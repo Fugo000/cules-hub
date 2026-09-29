@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'screens/match_screen.dart';
+import 'screens/squad_screen.dart';
 import 'screens/masia_screen.dart';
 import 'screens/finance_screen.dart';
 
 void main() {
-  runApp(const BarcaApp());
+  runApp(const CulesHubApp());
 }
 
-class BarcaApp extends StatelessWidget {
-  const BarcaApp({super.key});
+class CulesHubApp extends StatelessWidget {
+  const CulesHubApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -36,6 +37,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   final List<Widget> _screens = const [
     BarcaMatchScreen(),
+    SquadScreen(),
     MasiaScreen(),
     FinanceScreen(),
   ];
@@ -43,7 +45,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _screens[_currentIndex],
+      body: IndexedStack(
+        index: _currentIndex,
+        children: _screens,
+      ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) {
@@ -51,20 +56,25 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             _currentIndex = index;
           });
         },
+        type: BottomNavigationBarType.fixed,
         backgroundColor: const Color(0xFF1E1E1E),
-        selectedItemColor: const Color(0xFFA50044),
+        selectedItemColor: Colors.amber,
         unselectedItemColor: Colors.grey,
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.sports_soccer),
-            label: 'Календарь',
+            label: 'Матчи',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.groups),
+            label: 'Состав 26/27',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.school),
             label: 'La Masia',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.account_balance_wallet),
+            icon: Icon(Icons.attach_money),
             label: 'Финансы',
           ),
         ],
