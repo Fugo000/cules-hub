@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 class ApiService {
   static String get baseUrl {
     if (kReleaseMode) {
-      return 'https://cules-backend.onrender.com/api';
+      return 'https://cules-hub.onrender.com/api';
     }
     return 'http://localhost:3000/api';
   }

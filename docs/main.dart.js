@@ -22028,7 +22028,7 @@ q=s[1]
 s=s[2]
 p=b[2]
 return A.d([o*m+l*k+j*n,o*r+l*q+j*s,o*p[0]+l*p[1]+j*p[2]],t.n)},
-adt(){return"https://cules-backend.onrender.com/api"},
+adt(){return"https://cules-hub.onrender.com/api"},
 PI(){var s=0,r=A.T(t.j),q,p=2,o=[],n,m,l,k,j
 var $async$PI=A.U(function(a,b){if(a===1){o.push(b)
 s=p}for(;;)switch(s){case 0:p=4
