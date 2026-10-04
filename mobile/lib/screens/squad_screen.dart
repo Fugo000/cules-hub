@@ -33,12 +33,6 @@ class _SquadScreenState extends State<SquadScreen> {
             return const Center(child: CircularProgressIndicator(color: Colors.amber));
           }
 
-          if (snapshot.hasError || !snapshot.hasData) {
-            return const Center(
-              child: Text('Ошибка загрузки состава', style: TextStyle(color: Colors.redAccent)),
-            );
-          }
-
           final data = snapshot.data ?? {};
           final squad = data['squad'] ?? {};
 
@@ -47,19 +41,13 @@ class _SquadScreenState extends State<SquadScreen> {
             children: [
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 8.0),
-                child: Text(
-                  '⚽ Тактическая схема (4-2-3-1)',
-                  style: TextStyle(color: Colors.amber, fontSize: 18, fontWeight: FontWeight.bold),
-                ),
+                child: Text('⚽ Расстановка (4-2-3-1)', style: TextStyle(color: Colors.amber, fontSize: 18, fontWeight: FontWeight.bold)),
               ),
               _buildPitch(),
               const SizedBox(height: 20),
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 8.0),
-                child: Text(
-                  '📋 Полный список команды 2026/2027',
-                  style: TextStyle(color: Colors.amber, fontSize: 18, fontWeight: FontWeight.bold),
-                ),
+                child: Text('📋 Заявка команды 2026/2027', style: TextStyle(color: Colors.amber, fontSize: 18, fontWeight: FontWeight.bold)),
               ),
               _buildCategory('Вратари', squad['goalkeepers'] ?? []),
               _buildCategory('Защитники', squad['defenders'] ?? []),
@@ -82,22 +70,8 @@ class _SquadScreenState extends State<SquadScreen> {
       ),
       child: Stack(
         children: [
-          Center(
-            child: Container(
-              height: 1,
-              color: Colors.white30,
-            ),
-          ),
-          Center(
-            child: Container(
-              width: 90,
-              height: 90,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white30, width: 1.5),
-              ),
-            ),
-          ),
+          Center(child: Container(height: 1, color: Colors.white30)),
+          Center(child: Container(width: 90, height: 90, decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: Colors.white30, width: 1.5)))),
           _buildFieldPlayer('Габриэль Жезус', '9', 0.12, 0.5),
           _buildFieldPlayer('Рафинья', '11', 0.30, 0.18),
           _buildFieldPlayer('Дани Ольмо', '20', 0.28, 0.5),
@@ -122,29 +96,14 @@ class _SquadScreenState extends State<SquadScreen> {
         children: [
           Container(
             padding: const EdgeInsets.all(8),
-            decoration: const BoxDecoration(
-              color: Color(0xFFA50044),
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(color: Colors.black54, blurRadius: 4, offset: Offset(0, 2)),
-              ],
-            ),
-            child: Text(
-              number,
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
-            ),
+            decoration: const BoxDecoration(color: Color(0xFFA50044), shape: BoxShape.circle),
+            child: Text(number, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
           ),
           const SizedBox(height: 2),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(
-              color: Colors.black87,
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Text(
-              name,
-              style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w500),
-            ),
+            decoration: BoxDecoration(color: Colors.black87, borderRadius: BorderRadius.circular(4)),
+            child: Text(name, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w500)),
           ),
         ],
       ),
@@ -159,17 +118,13 @@ class _SquadScreenState extends State<SquadScreen> {
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 8.0),
-          child: Text(
-            title,
-            style: const TextStyle(color: Colors.white70, fontSize: 15, fontWeight: FontWeight.bold),
-          ),
+          child: Text(title, style: const TextStyle(color: Colors.white70, fontSize: 15, fontWeight: FontWeight.bold)),
         ),
         ...players.map((p) {
           final stats = p['stats2627'] as Map<String, dynamic>? ?? {};
           return Card(
             color: const Color(0xFF1B1E2E),
             margin: const EdgeInsets.only(bottom: 8),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             child: ExpansionTile(
               leading: CircleAvatar(
                 backgroundColor: const Color(0xFFA50044),
@@ -187,14 +142,8 @@ class _SquadScreenState extends State<SquadScreen> {
                       Text('Рост/Вес: ${p['height'] ?? '—'} / ${p['weight'] ?? '—'} • Нога: ${p['foot'] ?? '—'}', style: const TextStyle(color: Colors.white70, fontSize: 12)),
                       const SizedBox(height: 4),
                       Text('Контракт до: ${p['contractEnd'] ?? '—'} • Клаусула: ${p['clause'] ?? '—'}', style: const TextStyle(color: Colors.amber, fontSize: 12)),
-                      if (p['traits'] != null) ...[
-                        const SizedBox(height: 6),
-                        Text('Навыки: ${p['traits']}', style: const TextStyle(color: Colors.lightBlueAccent, fontSize: 12)),
-                      ],
-                      if (stats.isNotEmpty) ...[
-                        const SizedBox(height: 6),
-                        Text('Статистика 26/27: Матчи: ${stats['matches'] ?? 0}, Голы: ${stats['goals'] ?? 0}, Ассисты: ${stats['assists'] ?? 0}', style: const TextStyle(color: Colors.greenAccent, fontSize: 12, fontWeight: FontWeight.bold)),
-                      ]
+                      if (p['traits'] != null) Text('Навыки: ${p['traits']}', style: const TextStyle(color: Colors.lightBlueAccent, fontSize: 12)),
+                      if (stats.isNotEmpty) Text('Статистика 26/27: Матчи: ${stats['matches'] ?? 0}, Голы: ${stats['goals'] ?? 0}, Ассисты: ${stats['assists'] ?? 0}', style: const TextStyle(color: Colors.greenAccent, fontSize: 12, fontWeight: FontWeight.bold)),
                     ],
                   ),
                 ),
