@@ -7,78 +7,86 @@ class ApiService {
     if (kReleaseMode) {
       return 'https://cules-hub.onrender.com/api';
     }
-    return 'http://localhost:3000/api';
+    return 'https://cules-hub.onrender.com/api';
   }
 
-  // 1. Запрос всех матчей
+  static String _noCacheUrl(String path) {
+    final ts = DateTime.now().millisecondsSinceEpoch;
+    return '$baseUrl/$path?t=$ts';
+  }
+
   static Future<List<dynamic>> fetchMatches() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/matches'));
+      final response = await http.get(Uri.parse(_noCacheUrl('matches')));
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
-      } else {
-        return [];
       }
+      return [];
     } catch (e) {
       print('Error fetching matches: $e');
       return [];
     }
   }
 
-  // 2. Детали конкретного матча
   static Future<Map<String, dynamic>> fetchMatchDetails(String matchId) async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/matches/$matchId'));
+      final response = await http.get(Uri.parse(_noCacheUrl('matches/$matchId')));
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
-      } else {
-        return {};
       }
+      return {};
     } catch (e) {
       print('Error fetching match details: $e');
       return {};
     }
   }
 
-  // 3. Официальный состав сезона 2026/2027
   static Future<Map<String, dynamic>> fetchSquad2026() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/squad'));
+      final response = await http.get(Uri.parse(_noCacheUrl('squad')));
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
-      } else {
-        return {};
       }
+      return {};
     } catch (e) {
       print('Error fetching squad: $e');
       return {};
     }
   }
 
-  // 4. Запрос данных La Masia
-  static Future<Map<String, dynamic>> fetchMasiaData() async {
+  static Future<List<dynamic>> fetchStandings() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/masia'));
+      final response = await http.get(Uri.parse(_noCacheUrl('standings')));
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
-      } else {
-        return {};
       }
+      return [];
+    } catch (e) {
+      print('Error fetching standings: $e');
+      return [];
+    }
+  }
+
+  static Future<Map<String, dynamic>> fetchMasiaData() async {
+    try {
+      final response = await http.get(Uri.parse(_noCacheUrl('masia')));
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+      return {};
     } catch (e) {
       print('Error fetching Masia data: $e');
       return {};
     }
   }
 
-  // 5. Запрос финансов
   static Future<Map<String, dynamic>> fetchTransfersAndFinance() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/finance'));
+      final response = await http.get(Uri.parse(_noCacheUrl('finance')));
       if (response.statusCode == 200) {
         return jsonDecode(response.body);
-      } else {
-        return {};
       }
+      return {};
     } catch (e) {
       print('Error fetching finance data: $e');
       return {};
